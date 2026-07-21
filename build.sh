@@ -11,8 +11,9 @@ mkdir -p "$WORK_DIR/app/src/com/desmosai"
 mkdir -p "$WORK_DIR/libs"
 cd "$WORK_DIR"
 
-echo "[2/7] Downloading DesmosAI.java from your repo..."
-curl -sL "$REPO_URL/DesmosAI.java" -o app/src/com/desmosai/DesmosAI.java
+echo "[2/7] Downloading DesmosAI.java from your repo (Cache-busted)..."
+# Added ?v=$(date +%s) to bypass GitHub's CDN cache
+curl -sL "$REPO_URL/DesmosAI.java?v=$(date +%s)" -o app/src/com/desmosai/DesmosAI.java
 
 echo "[3/7] Checking local API Key..."
 if [ ! -f "$KEY_FILE" ]; then
@@ -72,7 +73,6 @@ d8 --output build/dex_out build/obj/com/desmosai/*.class
 
 aapt package -f -M app/AndroidManifest.xml -I libs/android.jar -F build/app.unsigned.apk
 
-# CRITICAL FIX: Copy classes.dex to the root of the build folder so it packs correctly
 cp build/dex_out/classes.dex build/classes.dex
 cd build
 aapt add app.unsigned.apk classes.dex >/dev/null 2>&1
