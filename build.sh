@@ -45,6 +45,7 @@ cat << 'EOF' > app/AndroidManifest.xml
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.desmosai">
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Desmos AI"
@@ -70,8 +71,11 @@ ecj -d build/obj -classpath libs/android.jar app/src/com/desmosai/DesmosAI.java
 d8 --output build/dex_out build/obj/com/desmosai/*.class
 
 aapt package -f -M app/AndroidManifest.xml -I libs/android.jar -F build/app.unsigned.apk
+
+# CRITICAL FIX: Copy classes.dex to the root of the build folder so it packs correctly
+cp build/dex_out/classes.dex build/classes.dex
 cd build
-aapt add app.unsigned.apk dex_out/classes.dex >/dev/null 2>&1
+aapt add app.unsigned.apk classes.dex >/dev/null 2>&1
 cd ..
 
 if [ ! -f debug.jks ]; then
