@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.widget.EditText;
 import android.widget.Button;
@@ -32,7 +33,6 @@ public class DesmosAI extends Activity {
     ScrollView chatScroll;
     String apiKey = "%%GROQ_API_KEY%%"; 
     
-    // Chat history for context memory
     JSONArray chatHistory = new JSONArray();
 
     @Override
@@ -62,15 +62,17 @@ public class DesmosAI extends Activity {
 
         rootLayout.addView(topBar);
 
-        // --- Desmos WebView (Top Half) ---
+        // --- Desmos WebView (Top 65%) ---
         desmosView = new WebView(this);
-        desmosView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.5f));
+        // Give Desmos more room (65% of screen)
+        desmosView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2.0f));
         rootLayout.addView(desmosView);
 
-        // --- Chat Scroll View (Bottom Half) ---
+        // --- Chat Scroll View (Bottom 35%) ---
         chatScroll = new ScrollView(this);
         chatScroll.setBackgroundColor(Color.parseColor("#121212"));
-        chatScroll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        // Give Chat 35% of screen
+        chatScroll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
         chatLayout = new LinearLayout(this);
         chatLayout.setOrientation(LinearLayout.VERTICAL);
@@ -106,7 +108,12 @@ public class DesmosAI extends Activity {
         WebSettings settings = desmosView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        desmosView.loadUrl("https://www.desmos.com/calculator?embed");
+        settings.setBuiltInZoomControls(true); // FIX: Enable pinch to zoom
+        settings.setDisplayZoomControls(false); // Hide the ugly +/- buttons
+        
+        // FIX: Use custom HTML to load Desmos API directly. This forces the expression list and sliders to show.
+        String customHtml = "<!DOCTYPE html><html><head><script src=\"https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6\"></script><style>html,body{margin:0;padding:0;height:100%;overflow:hidden;} #calculator{width:100%;height:100%;}</style></head><body><div id=\"calculator\"></div><script>var elt=document.getElementById('calculator');window.Calc=Desmos.GraphingCalculator(elt,{keypad:true,expressions:true,settingsMenu:true,zoomButtons:true,expressionsTopbar:true,capExpressionSize:false});</script></body></html>";
+        desmosView.loadDataWithBaseURL("https://www.desmos.com/", customHtml, "text/html", "UTF-8", null);
 
         // --- Fetch Models ---
         fetchGroqModels();
@@ -156,7 +163,6 @@ public class DesmosAI extends Activity {
                                     adapter.add(modelId);
                                 }
                                 modelSpinner.setAdapter(adapter);
-                                // Set default to llama-3.3-70b-versatile if it exists
                                 for (int i = 0; i < adapter.getCount(); i++) {
                                     if (adapter.getItem(i).equals("llama-3.3-70b-versatile")) {
                                         modelSpinner.setSelection(i);
@@ -220,10 +226,14 @@ public class DesmosAI extends Activity {
                 try {
                     String selectedModel = modelSpinner.getSelectedItem().toString();
 
-                    // Build chat history
                     JSONObject systemMsg = new JSONObject();
                     systemMsg.put("role", "system");
-                    systemMsg.put("content", "You are a Desmos API controller. Respond with a JSON object containing two keys: 'explanation' (a short text describing what you did) and 'desmos_js' (the raw JavaScript to execute using the 'Calc' object). Do not use markdown.");
+                    // FIX: Greatly enhanced system prompt to handle sliders, bounds, and complex functions
+                    systemMsg.put("content", "You are a Desmos Graphing Calculator API controller. Convert the user's request into valid JavaScript using the global `Calc` object. " +
+                    "To plot a function: Calc.setExpression({id:'1', latex:'y=sin(x)'}); " +
+                    "To add a slider: Calc.setExpression({id:'2', latex:'a=2', sliderBounds:{min:-10, max:10, step:0.1}}); " +
+                    "To set graph bounds (zoom): Calc.setMathBounds({left:-10, right:10, bottom:-10, top:10}); " +
+                    "Respond with a JSON object containing 'explanation' and 'desmos_js'. Do not use markdown.");
                     
                     if (chatHistory.length() == 0) {
                         chatHistory.put(systemMsg);
@@ -270,7 +280,6 @@ public class DesmosAI extends Activity {
                     String explanation = resultJson.getString("explanation");
                     String jsCode = resultJson.getString("desmos_js").replace("```javascript", "").replace("```", "").trim();
 
-                    // Add assistant message to memory
                     JSONObject assistantMsg = new JSONObject();
                     assistantMsg.put("role", "assistant");
                     assistantMsg.put("content", content);
@@ -295,4 +304,4 @@ public class DesmosAI extends Activity {
             }
         }).start();
     }
-            }
+                }
