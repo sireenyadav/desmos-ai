@@ -20,7 +20,7 @@ import org.json.JSONObject;
 public class DesmosAI extends Activity {
     WebView desmosView;
     EditText inputText;
-    String apiKey = "%%GROQ_API_KEY%%"; // The bash script will replace this
+    String apiKey = "%%GROQ_API_KEY%%"; // Safe placeholder
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,4 +121,4 @@ public class DesmosAI extends Activity {
             return "console.log('Error: " + e.getMessage() + "');";
         }
     }
-          }
+}
