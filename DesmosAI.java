@@ -224,10 +224,16 @@ public class DesmosAI extends Activity {
 
                     JSONObject systemMsg = new JSONObject();
                     systemMsg.put("role", "system");
+                    // MASSIVELY UPGRADED PROMPT TO FIX LATEX FORMATTING
                     systemMsg.put("content", "You are a Desmos Graphing Calculator API controller. Convert the user's request into valid JavaScript using the global `Calc` object. " +
-                    "To plot a function: Calc.setExpression({id:'1', latex:'y=sin(x)'}); " +
-                    "To add a slider: Calc.setExpression({id:'2', latex:'a=2', sliderBounds:{min:-10, max:10, step:0.1}}); " +
-                    "To set graph bounds (zoom): Calc.setMathBounds({left:-10, right:10, bottom:-10, top:10}); " +
+                    "CRITICAL RULE: Desmos uses LaTeX. Math functions MUST be escaped with a backslash! Use \\sin(x), \\cos(x), \\tan(x), \\sqrt{x}, \\log(x). " +
+                    "Do NOT write 'sin(x)', you MUST write '\\\\sin(x)' in the JSON string. " +
+                    "Examples:\n" +
+                    "- Plot a parabola: Calc.setExpression({id:'1', latex:'y=x^2'});\n" +
+                    "- Plot sin x: Calc.setExpression({id:'2', latex:'y=\\\\sin(x)'});\n" +
+                    "- Plot tangent graph: Calc.setExpression({id:'3', latex:'y=\\\\tan(x)'});\n" +
+                    "- Add a slider for a: Calc.setExpression({id:'4', latex:'a=2', sliderBounds:{min:-10, max:10, step:0.1}});\n" +
+                    "- Zoom out: Calc.setMathBounds({left:-10, right:10, bottom:-10, top:10});\n" +
                     "Respond with a JSON object containing 'explanation' and 'desmos_js'. Do not use markdown.");
                     
                     if (chatHistory.length() == 0) {
@@ -299,4 +305,4 @@ public class DesmosAI extends Activity {
             }
         }).start();
     }
-}
+                        }
