@@ -25,9 +25,19 @@ sed -i "s|%%GROQ_API_KEY%%|$API_KEY|g" app/src/com/desmosai/DesmosAI.java
 echo "[4/8] Installing Termux dependencies..."
 pkg install -y openjdk-17 aapt apksigner d8 ecj wget unzip >/dev/null 2>&1
 
-echo "[5/8] Downloading Android SDK (android.jar)..."
+echo "[5/8] Downloading official Android SDK from Google..."
 if [ ! -f libs/android.jar ] || ! unzip -t libs/android.jar >/dev/null 2>&1; then
-    curl -sL "https://raw.githubusercontent.com/nicehash/Android-SDK/master/platforms/android-28/android.jar" -o libs/android.jar
+    # Downloading directly from Google's official repository
+    wget -q "https://dl.google.com/android/repository/platform-28_r06.zip" -O platform-28.zip
+    unzip -q platform-28.zip -d platform-28
+    cp platform-28/android-28/android.jar libs/android.jar
+    rm -rf platform-28 platform-28.zip
+fi
+
+# Verify android.jar is valid
+if ! unzip -t libs/android.jar >/dev/null 2>&1; then
+    echo "❌ Error: Failed to download a valid android.jar. Check internet connection."
+    exit 1
 fi
 
 echo "[6/8] Generating AndroidManifest.xml..."
