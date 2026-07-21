@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.View;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.widget.EditText;
 import android.widget.Button;
@@ -64,14 +63,12 @@ public class DesmosAI extends Activity {
 
         // --- Desmos WebView (Top 65%) ---
         desmosView = new WebView(this);
-        // Give Desmos more room (65% of screen)
         desmosView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2.0f));
         rootLayout.addView(desmosView);
 
         // --- Chat Scroll View (Bottom 35%) ---
         chatScroll = new ScrollView(this);
         chatScroll.setBackgroundColor(Color.parseColor("#121212"));
-        // Give Chat 35% of screen
         chatScroll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
         chatLayout = new LinearLayout(this);
@@ -108,10 +105,9 @@ public class DesmosAI extends Activity {
         WebSettings settings = desmosView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setBuiltInZoomControls(true); // FIX: Enable pinch to zoom
-        settings.setDisplayZoomControls(false); // Hide the ugly +/- buttons
+        settings.setBuiltInZoomControls(true);
+        settings.setDisplayZoomControls(false);
         
-        // FIX: Use custom HTML to load Desmos API directly. This forces the expression list and sliders to show.
         String customHtml = "<!DOCTYPE html><html><head><script src=\"https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6\"></script><style>html,body{margin:0;padding:0;height:100%;overflow:hidden;} #calculator{width:100%;height:100%;}</style></head><body><div id=\"calculator\"></div><script>var elt=document.getElementById('calculator');window.Calc=Desmos.GraphingCalculator(elt,{keypad:true,expressions:true,settingsMenu:true,zoomButtons:true,expressionsTopbar:true,capExpressionSize:false});</script></body></html>";
         desmosView.loadDataWithBaseURL("https://www.desmos.com/", customHtml, "text/html", "UTF-8", null);
 
@@ -150,8 +146,8 @@ public class DesmosAI extends Activity {
                     }
                     br.close();
 
-                    JSONObject jsonObject = new JSONObject(response.toString());
-                    JSONArray models = jsonObject.getJSONArray("data");
+                    final JSONObject jsonObject = new JSONObject(response.toString());
+                    final JSONArray models = jsonObject.getJSONArray("data");
                     
                     runOnUiThread(new Runnable() {
                         @Override
@@ -219,7 +215,7 @@ public class DesmosAI extends Activity {
         });
     }
 
-    private void callGroq(String userInput) {
+    private void callGroq(final String userInput) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -228,7 +224,6 @@ public class DesmosAI extends Activity {
 
                     JSONObject systemMsg = new JSONObject();
                     systemMsg.put("role", "system");
-                    // FIX: Greatly enhanced system prompt to handle sliders, bounds, and complex functions
                     systemMsg.put("content", "You are a Desmos Graphing Calculator API controller. Convert the user's request into valid JavaScript using the global `Calc` object. " +
                     "To plot a function: Calc.setExpression({id:'1', latex:'y=sin(x)'}); " +
                     "To add a slider: Calc.setExpression({id:'2', latex:'a=2', sliderBounds:{min:-10, max:10, step:0.1}}); " +
@@ -277,8 +272,8 @@ public class DesmosAI extends Activity {
                                              .getString("content");
 
                     JSONObject resultJson = new JSONObject(content);
-                    String explanation = resultJson.getString("explanation");
-                    String jsCode = resultJson.getString("desmos_js").replace("```javascript", "").replace("```", "").trim();
+                    final String explanation = resultJson.getString("explanation");
+                    final String jsCode = resultJson.getString("desmos_js").replace("```javascript", "").replace("```", "").trim();
 
                     JSONObject assistantMsg = new JSONObject();
                     assistantMsg.put("role", "assistant");
@@ -293,7 +288,7 @@ public class DesmosAI extends Activity {
                         }
                     });
 
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -304,4 +299,4 @@ public class DesmosAI extends Activity {
             }
         }).start();
     }
-                }
+}
